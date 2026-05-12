@@ -1,3 +1,40 @@
+I revived this toy benchmark from 7 years ago to see how sled has grown. As expected the latest release of sled is comparable to rocks, but when I bumped sled to the new 1.0.0-alpha, it absolutely demolished rocks:
+```
+% run
+run
++ run
++ rm -rf sled rocks
++ cargo run --release
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.14s
+     Running `target/release/sled-vs-rocksdb`
+Sled: 7.350510625s
+RocksDB: 23.033798334s
+[src/main.rs:87:5] count = 757935405000000
+Sled: 36.799792ms
+[src/main.rs:100:5] count = 757935405000000
+RocksDB: 183.269625ms
++ du -sh sled rocks
+2.0M    sled
+ 15M    rocks
+
+# and after 4xing the workload:
+ 
+% run
++ rm -rf sled rocks
++ cargo run --release
+Sled: 34.9158065s
+RocksDB: 91.48000075s
+[src/main.rs:87:5] count = 3031741620000000
+Sled: 236.2985ms
+[src/main.rs:100:5] count = 3031741620000000
+RocksDB: 555.28275ms
++ du -sh sled rocks
+8.7M    sled
+ 63M    rocks
+```
+
+Original readme below.
+
 # Toy benchmark comparing RocksDB and Sled
 
 I have created a sketch of a benchmark of RocksDB and Sled trying to decide whether I should use Sled instead of RocksDB for a new project I am developing. From the start, I like more the API of Sled (and its compilation time). However, RocksDB still seems to be the better alternative as of this date. Hopefully, as Sled stabilizes, these conclusions might be different.
