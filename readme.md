@@ -1,22 +1,21 @@
 I revived this toy benchmark from 7 years ago to see how sled has grown. As expected the latest release of sled is comparable to rocks, but when I bumped sled to the new 1.0.0-alpha, it absolutely demolished rocks:
 ```
-% run
-run
-+ run
-+ rm -rf sled rocks
-+ cargo run --release
-    Finished `release` profile [optimized + debuginfo] target(s) in 0.14s
-     Running `target/release/sled-vs-rocksdb`
-Sled: 7.350510625s
-RocksDB: 23.033798334s
-[src/main.rs:87:5] count = 757935405000000
-Sled: 36.799792ms
-[src/main.rs:100:5] count = 757935405000000
-RocksDB: 183.269625ms
-+ du -sh sled rocks
-2.0M    sled
- 15M    rocks
-
+  ┌───────────────────────────┬─────────┬───────────┬────────┐
+  │                           │ merging │ iterating │  disk  │
+  ├───────────────────────────┼─────────┼───────────┼────────┤
+  │ Original 2019 RocksDB     │ 100s    │ 0.85s     │ 34 MB  │
+  ├───────────────────────────┼─────────┼───────────┼────────┤
+  │ Original 2019 Sled (0.25) │ 207s    │ 1.85s     │ 226 MB │
+  ├───────────────────────────┼─────────┼───────────┼────────┤
+  │ Sled 0.34.7               │ 21.3s   │ 0.19s     │ 36 MB  │
+  ├───────────────────────────┼─────────┼───────────┼────────┤
+  │ Sled 1.0-alpha            │ 7.2s    │ 33 ms     │ 1.8 MB │
+  ├───────────────────────────┼─────────┼───────────┼────────┤
+  │ RocksDB 0.24              │ 23.5s   │ 0.19s     │ 15 MB  │
+  └───────────────────────────┴─────────┴───────────┴────────┘
+```
+Note that the original benchmark was run on different hardware (I'm on an M4 mac).
+```
 # and after 4xing the workload:
  
 % run
@@ -33,7 +32,7 @@ RocksDB: 555.28275ms
  63M    rocks
 ```
 
-Original readme below.
+Original readme:
 
 # Toy benchmark comparing RocksDB and Sled
 
