@@ -1,0 +1,7 @@
+#!/bin/bash
+
+function run {
+	rm -rf sled rocks
+	cargo run --release
+	du -sh sled rocks
+}

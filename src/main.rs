@@ -10,7 +10,9 @@ pub const SLED_PATH: &str = "./sled";
 pub const ROCKS_PATH: &str = "./rocks";
 
 /// This is the concatenation merge operator in Sled.
-fn sled_cat(_key: &[u8], val: Option<&[u8]>, new: &[u8]) -> Option<Vec<u8>> {
+/// Sled 1.0-alpha removed the dedicated merge-operator API, so we emulate it via
+/// `update_and_fetch` (atomic read-modify-write) using this function as the update closure.
+fn sled_cat(val: Option<&[u8]>, new: &[u8]) -> Option<Vec<u8>> {
     Some(val.into_iter().flatten().chain(new).cloned().collect())
 }
 
@@ -32,19 +34,9 @@ fn from_bytes(b: &[u8]) -> u32 {
 
 fn main() {
     // This is how we initialize Sled.
-    let sled_db = {
-        let db = sled::Config::new()
-            .path(SLED_PATH)
-            .use_compression(true)
-            .cache_capacity(1_000_000_000)
-            .flush_every_ms(Some(200))
-            .print_profile_on_drop(true)
-            .open()
-            .unwrap();
-        db.set_merge_operator(sled_cat);
-
-        db
-    };
+    // Sled 1.0-alpha simplified initialization: no ConfigBuilder tuning knobs, no merge operator
+    // registration, and compression/zstd are unconditional (no feature flag to toggle).
+    let sled_db: sled::Db = sled::open(SLED_PATH).unwrap();
 
     // This is how we initialize RocksDB.
     let rocks_db = {
@@ -61,9 +53,11 @@ fn main() {
     // This is how we do it in Sled.
     let tic = Instant::now();
 
-    for i in 0..1_000_000u32 {
+    for i in 0..4_000_000u32 {
         for j in 0..10u32 {
-            sled_db.merge(&i.to_le_bytes(), &j.to_le_bytes()).unwrap();
+            sled_db
+                .update_and_fetch(&i.to_le_bytes(), |old| sled_cat(old, &j.to_le_bytes()))
+                .unwrap();
         }
     }
 
@@ -71,7 +65,7 @@ fn main() {
 
     // This is how we do it in RocksDB.
     let tic = Instant::now();
-    for i in 0..1_000_000u32 {
+    for i in 0..4_000_000u32 {
         for j in 0..10u32 {
             rocks_db.merge(&i.to_le_bytes(), &j.to_le_bytes()).unwrap();
         }
@@ -106,15 +100,4 @@ fn main() {
     dbg!(count);
 
     println!("RocksDB: {:?}", tic.elapsed());
-
-    // 3. Force each DB to compact / flush, then report on-disk size.
-    let tic = Instant::now();
-    sled_db.flush().unwrap();
-    println!("Sled flush: {:?}", tic.elapsed());
-
-    let tic = Instant::now();
-    rocks_db.compact_range::<&[u8], &[u8]>(None, None);
-    println!("RocksDB compact_range: {:?}", tic.elapsed());
-
-    println!("Sled size_on_disk: {} bytes", sled_db.size_on_disk().unwrap());
 }
