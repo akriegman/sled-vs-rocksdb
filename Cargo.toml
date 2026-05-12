@@ -9,6 +9,7 @@ lto = "thin"
 debug = true
 
 [dependencies]
-sled = { version = "0.25.0", features = ["compression"] }
-rocksdb = "0.12.3"
-jemallocator = "0.3.2"
+jemallocator = "0.5.4"
+rocksdb = { version = "0.24.0", default-features = false, features = ["lz4", "snappy", "bindgen-runtime"] }
+sled = { version = "0.34.7", features = ["compression"] }
+sled1 = { version = "1.0.0-alpha.124", package = "sled" }
